@@ -5,6 +5,7 @@ from keras.losses import MeanSquaredError
 from keras.models import Sequential
 from keras.layers import Dense
 from bcc import BPF
+import config as cfg
 
 # Create BPF objects
 bpf = BPF(src_file="port_flow.c")
@@ -81,18 +82,14 @@ class PortFlowAutoencoder:
             return True
 
 # Initialize dataset and autoencoder
-input_dim = 5
-encoding_dim = 3
 
-port_flow_autoencoder = PortFlowAutoencoder(input_dim, encoding_dim)
+port_flow_autoencoder = PortFlowAutoencoder(cfg.input_dim, cfg.encoding_dim)
 
 # Main loop similar to the first script
-prediction_period = 5
-training_period = 60
 dataset_available = False
 try:
     current_time = time.time()
-    next_training_time = current_time + training_period
+    next_training_time = current_time + cfg.training_period
     while True:
         print("< -------- new period-------- >")
 
@@ -117,7 +114,7 @@ try:
             port_flow_autoencoder.train_map[key.value].append(flow_data)
 
             # Predict anomalies only when it's time for predictions
-            if current_time >= next_training_time - training_period and dataset_available:
+            if current_time >= next_training_time - cfg.training_period and dataset_available:
                 is_anomaly = port_flow_autoencoder.predict_anomalies(key.value, flow_data)
                 if(is_anomaly):
                 	print(f"Anomaly for Port {key.value}: {flow_data}")
@@ -131,13 +128,12 @@ try:
                 port_flow_autoencoder.train_autoencoder(port_flow_autoencoder.train_map)
 
             # Update the next training time
-            next_training_time = current_time + training_period
-            period_count = 0
+            next_training_time = current_time + cfg.training_period
 
         # Sleep until the next iteration or next training time
         #sleep_time = next_training_time - current_time if current_time < next_training_time else prediction_period
         current_time = time.time()
-        time.sleep(prediction_period)
+        time.sleep(cfg.prediction_period)
 
 except KeyboardInterrupt:
     pass
