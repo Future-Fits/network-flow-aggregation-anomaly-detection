@@ -1,3 +1,5 @@
+import requests
+
 import time
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -117,8 +119,9 @@ try:
             if current_time >= next_training_time - cfg.training_period and dataset_available:
                 is_anomaly = port_flow_autoencoder.predict_anomalies(key.value, flow_data)
                 if(is_anomaly):
-                	print(f"Anomaly for Port {key.value}: {flow_data}")
-                	
+                    print(f"Anomaly for Port {key.value}: {flow_data}")
+                    requests.post('http://localhost:3001/portAggregationAlerts/', json={"portNumber": key.value, "totalBytes": flow_stats.total_bytes_sent, "numberOfPackets": flow_stats.total_packets, "averagePayloadSize": flow_stats.avg_payload_size, "maximumPayloadSize": flow_stats.max_payload_size, "minimumPayloadSize": flow_stats.min_payload_size})
+                    
         # Train the autoencoder every 'training_period' seconds
         if current_time >= next_training_time:
             dataset_available = True
